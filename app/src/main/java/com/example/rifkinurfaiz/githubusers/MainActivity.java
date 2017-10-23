@@ -36,6 +36,10 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private static final String URL = "https://api.github.com/search/users?q=";
+    private static final String loadLimit = "&per_page=30";
+    private static final String page = "&page=";
+    String keyword = "";
+    int pageAt = 1;
 
     Toolbar mToolbar;
     EditText searchBar;
@@ -60,7 +64,8 @@ public class MainActivity extends AppCompatActivity {
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
                 if (i == EditorInfo.IME_ACTION_SEARCH) {
                     if(haveNetworkConnection()) {
-                        loadRecyclerViewData(searchBar.getText().toString());
+                        keyword = searchBar.getText().toString();
+                        loadRecyclerViewData(keyword);
                         return true;
                     }
                     else {
@@ -74,6 +79,19 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (dy > 0) {
+                    if (!recyclerView.canScrollVertically(RecyclerView.FOCUS_DOWN)) {
+                        pageAt++;
+                        loadMore(keyword);
+                    }
+                }
+            }
+        });
 
         listItems = new ArrayList<>();
     }
@@ -89,12 +107,70 @@ public class MainActivity extends AppCompatActivity {
         layoutWallpaper.setVisibility(View.VISIBLE);
         layoutNoData.setVisibility(View.GONE);
 
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, URL + key,
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, URL + key + loadLimit,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         progressDialog.dismiss();
                         listItems.removeAll(listItems);
+                        try {
+                            JSONObject jsonObject = new JSONObject(response);
+                            String dataLength = jsonObject.getString("total_count");
+                            JSONArray jsonArray = jsonObject.getJSONArray("items");
+
+                            Log.d("Total Data Count", dataLength);
+                            Log.d("JSON ARRAY", "" + jsonArray);
+
+                            for(int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject o = jsonArray.getJSONObject(i);
+                                ListItem listItem = new ListItem(
+                                        o.getString("login"),
+                                        o.getString("avatar_url")
+                                );
+                                listItems.add(listItem);
+                            }
+
+                            if(Integer.parseInt(dataLength) == 0) {
+                                layoutWallpaper.setVisibility(View.GONE);
+                                layoutNoData.setVisibility(View.VISIBLE);
+                            }
+                            adapter = new RecyclerViewAdapter(getApplicationContext(), listItems);
+                            recyclerView.setAdapter(adapter);
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        progressDialog.dismiss();
+                        Log.d("ERROR", "BUGS");
+                    }
+                });
+
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        requestQueue.add(stringRequest);
+    }
+
+    public void loadMore(String key) {
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Loading...");
+        progressDialog.show();
+
+        layoutWallpaper = (LinearLayout) findViewById(R.id.layoutWallpaper);
+        layoutNoData = (LinearLayout) findViewById(R.id.linearLayoutNoData);
+
+        layoutWallpaper.setVisibility(View.VISIBLE);
+        layoutNoData.setVisibility(View.GONE);
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, URL + key + loadLimit + page + pageAt,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        progressDialog.dismiss();
+
                         try {
                             JSONObject jsonObject = new JSONObject(response);
                             String dataLength = jsonObject.getString("total_count");
@@ -146,4 +222,6 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
     }
+
+
 }

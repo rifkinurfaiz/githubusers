@@ -7,7 +7,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -35,10 +37,16 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        ListItem listItem = listItems.get(position);
+        final ListItem listItem = listItems.get(position);
 
         holder.username.setText(listItem.getUsername());
         Picasso.with(context).load(listItem.getAvatar()).into(holder.avatar);
+        holder.linearLayoutItem.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(context, "User: " + listItem.getUsername(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
@@ -50,11 +58,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
         public TextView username;
         public ImageView avatar;
+        LinearLayout linearLayoutItem;
 
         public ViewHolder(View itemView) {
             super(itemView);
             username = (TextView) itemView.findViewById(R.id.textViewUsername);
             avatar = (ImageView) itemView.findViewById(R.id.imageViewAvatar);
+            linearLayoutItem = (LinearLayout) itemView.findViewById(R.id.linearLayoutItem);
         }
     }
 }
