@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
                     if(haveNetworkConnection()) {
                         keyword = searchBar.getText().toString();
                         if(keyword.length() > 0) {
-                            pageAt = 0;
+                            pageAt = 1;
                             loadRecyclerViewData();
                         }
                         return true;
