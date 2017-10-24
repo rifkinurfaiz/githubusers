@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
         }
         // limit exeed
         else if(status == 3) {
-            Toast.makeText(getApplicationContext(), "Limit exeed, try again in 60 second", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Limit exeeds, try again in 60 second", Toast.LENGTH_SHORT).show();
         }
         // poor internet connection
         else if(status == 4) {
