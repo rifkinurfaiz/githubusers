@@ -18,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -38,8 +39,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String page = "&page=";
     String keyword = "";
     int pageAt = 1;
-    String allDataLength;
-    int status = 1; //1 data okay, normal view; 2 data not found; 3 limit exeed
+    int allDataLength;
+    int status = 1; //1 data okay, normal view; 2 data not found; 3 limit exeed; 4 poor internet connection
 
     Toolbar mToolbar;
     EditText searchBar;
@@ -90,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
                 super.onScrolled(recyclerView, dx, dy);
                 if (dy > 0) {
                     if (!recyclerView.canScrollVertically(RecyclerView.FOCUS_DOWN)) {
-                        if(listItems.size() < Integer.parseInt(allDataLength) ) {
+                        if(listItems.size() < allDataLength) {
                             pageAt++;
                             loadMore();
                         }
@@ -106,19 +107,19 @@ public class MainActivity extends AppCompatActivity {
         if(status == 1) {
             layoutWallpaper.setVisibility(View.VISIBLE);
             layoutNoData.setVisibility(View.GONE);
-            layoutLimitExeed.setVisibility(View.GONE);
         }
         // data not found
         else if(status == 2) {
             layoutWallpaper.setVisibility(View.GONE);
             layoutNoData.setVisibility(View.VISIBLE);
-            layoutLimitExeed.setVisibility(View.GONE);
         }
         // limit exeed
         else if(status == 3) {
-            layoutWallpaper.setVisibility(View.GONE);
-            layoutNoData.setVisibility(View.GONE);
-            layoutLimitExeed.setVisibility(View.VISIBLE);
+            Toast.makeText(getApplicationContext(), "Limit exeed, try again in 60 second", Toast.LENGTH_SHORT).show();
+        }
+        // poor internet connection
+        else if(status == 4) {
+            Toast.makeText(getApplicationContext(), "Your internet connection is poor", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -144,10 +145,10 @@ public class MainActivity extends AppCompatActivity {
                         listItems.removeAll(listItems);
                         try {
                             JSONObject jsonObject = new JSONObject(response);
-                            allDataLength = jsonObject.getString("total_count");
+                            allDataLength = jsonObject.getInt("total_count");
                             JSONArray jsonArray = jsonObject.getJSONArray("items");
 
-                            Log.d("Total Data Count", allDataLength);
+                            Log.d("Total Data Count", "" + allDataLength);
                             Log.d("JSON ARRAY", "" + jsonArray);
 
                             for(int i = 0; i < jsonArray.length(); i++) {
@@ -160,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                             // not found
-                            if(Integer.parseInt(allDataLength) == 0) {
+                            if(allDataLength == 0) {
                                 status = 2;
                                 setBackground();
                             }
@@ -176,9 +177,17 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
-                        // limit exeed
-                        status = 3;
-                        setBackground();
+                        NetworkResponse networkResponse = error.networkResponse;
+                        if(networkResponse.statusCode == 403) {
+                            // limit exeed
+                            status = 3;
+                            setBackground();
+                        }
+                        else {
+                            // poor internet connection
+                            status = 4;
+                            setBackground();
+                        }
                     }
                 });
 
@@ -207,10 +216,10 @@ public class MainActivity extends AppCompatActivity {
                         progressDialog.dismiss();
                         try {
                             JSONObject jsonObject = new JSONObject(response);
-                            allDataLength = jsonObject.getString("total_count");
+                            allDataLength = jsonObject.getInt("total_count");
                             JSONArray jsonArray = jsonObject.getJSONArray("items");
 
-                            Log.d("Total Data Count", allDataLength);
+                            Log.d("Total Data Count", "" + allDataLength);
                             Log.d("JSON ARRAY", "" + jsonArray);
 
                             for(int i = 0; i < jsonArray.length(); i++) {
@@ -223,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                             // not found
-                            if(Integer.parseInt(allDataLength) == 0) {
+                            if(allDataLength == 0) {
                                 status = 2;
                                 setBackground();
                             }
@@ -242,9 +251,17 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
-                        // limit exeed
-                        status = 3;
-                        setBackground();
+                        NetworkResponse networkResponse = error.networkResponse;
+                        if(networkResponse.statusCode == 403) {
+                            // limit exeed
+                            status = 3;
+                            setBackground();
+                        }
+                        else {
+                            // poor internet connection
+                            status = 4;
+                            setBackground();
+                        }
                     }
                 });
 
