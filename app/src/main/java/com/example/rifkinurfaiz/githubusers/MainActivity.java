@@ -92,8 +92,13 @@ public class MainActivity extends AppCompatActivity {
                 if (dy > 0) {
                     if (!recyclerView.canScrollVertically(RecyclerView.FOCUS_DOWN)) {
                         if(listItems.size() < allDataLength) {
-                            pageAt++;
-                            loadMore();
+                            if(haveNetworkConnection()) {
+                                pageAt++;
+                                loadMore();
+                            }
+                            else {
+                                Toast.makeText(getApplicationContext(), "You don't have internet connection", Toast.LENGTH_SHORT).show();
+                            }
                         }
                     }
                 }
@@ -178,15 +183,16 @@ public class MainActivity extends AppCompatActivity {
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
                         NetworkResponse networkResponse = error.networkResponse;
-                        if(networkResponse.statusCode == 403) {
-                            // limit exeed
-                            status = 3;
-                            setBackground();
-                        }
-                        else {
-                            // poor internet connection
-                            status = 4;
-                            setBackground();
+                        if(networkResponse != null) {
+                            if (networkResponse.statusCode == 403) {
+                                // limit exeed
+                                status = 3;
+                                setBackground();
+                            } else {
+                                // poor internet connection
+                                status = 4;
+                                setBackground();
+                            }
                         }
                     }
                 });
@@ -252,15 +258,16 @@ public class MainActivity extends AppCompatActivity {
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
                         NetworkResponse networkResponse = error.networkResponse;
-                        if(networkResponse.statusCode == 403) {
-                            // limit exeed
-                            status = 3;
-                            setBackground();
-                        }
-                        else {
-                            // poor internet connection
-                            status = 4;
-                            setBackground();
+                        if(networkResponse != null) {
+                            if (networkResponse.statusCode == 403) {
+                                // limit exeed
+                                status = 3;
+                                setBackground();
+                            } else {
+                                // poor internet connection
+                                status = 4;
+                                setBackground();
+                            }
                         }
                     }
                 });
