@@ -32,7 +32,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Log.d("Item Count", "" + listItems.size());
-        return new ViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.list_view_adapter, parent, false));
+        return new ViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.list_view_item, parent, false));
     }
 
     @Override

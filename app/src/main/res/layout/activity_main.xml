@@ -7,14 +7,14 @@
 
     <include
         android:id="@+id/toolbar"
-        layout="@layout/toolbar"></include>
+        layout="@layout/custom_toolbar"></include>
 
     <LinearLayout
         android:id="@+id/layoutWallpaper"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="@color/colorGrey">
+        android:background="@color/colorGrey"
+        android:orientation="vertical">
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/recyclerView"
@@ -29,23 +29,43 @@
         android:id="@+id/linearLayoutNoData"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="horizontal"
         android:background="@color/colorGrey"
-        android:gravity="center">
+        android:gravity="center"
+        android:orientation="horizontal">
 
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/icon_no_data"
-            android:layout_marginRight="@dimen/activity_horizontal_margin"/>
+            android:layout_marginRight="@dimen/activity_horizontal_margin"
+            android:src="@drawable/icon_no_data" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="No data available"
-            android:textSize="15dp"
-            android:textColor="@color/colorDarkerGrey"/>
-
+            android:textColor="@color/colorDarkerGrey"
+            android:textSize="15dp" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/linearLayoutLimitExeed"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorGrey"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/activity_horizontal_margin"
+            android:src="@drawable/icon_no_data" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Limit exeeded, try again in 60 second"
+            android:textColor="@color/colorDarkerGrey"
+            android:textSize="15dp" />
+    </LinearLayout>
 </LinearLayout>

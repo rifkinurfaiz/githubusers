@@ -14,7 +14,6 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,15 +35,16 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private static final String URL = "https://api.github.com/search/users?q=";
-    private static final String loadLimit = "&per_page=30";
     private static final String page = "&page=";
     String keyword = "";
     int pageAt = 1;
+    String allDataLength;
 
     Toolbar mToolbar;
     EditText searchBar;
     LinearLayout layoutWallpaper;
     LinearLayout layoutNoData;
+    LinearLayout layoutLimitExeed;
 
     RecyclerView recyclerView;
     RecyclerView.Adapter adapter;
@@ -65,7 +65,9 @@ public class MainActivity extends AppCompatActivity {
                 if (i == EditorInfo.IME_ACTION_SEARCH) {
                     if(haveNetworkConnection()) {
                         keyword = searchBar.getText().toString();
-                        loadRecyclerViewData(keyword);
+                        if(keyword.length() > 0) {
+                            loadRecyclerViewData();
+                        }
                         return true;
                     }
                     else {
@@ -87,7 +89,9 @@ public class MainActivity extends AppCompatActivity {
                 if (dy > 0) {
                     if (!recyclerView.canScrollVertically(RecyclerView.FOCUS_DOWN)) {
                         pageAt++;
-                        loadMore(keyword);
+                        if(Integer.parseInt(allDataLength) != listItems.size()) {
+                            loadMore();
+                        }
                     }
                 }
             }
@@ -96,18 +100,19 @@ public class MainActivity extends AppCompatActivity {
         listItems = new ArrayList<>();
     }
 
-    public void loadRecyclerViewData(String key) {
+    public void loadRecyclerViewData() {
         final ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Loading...");
         progressDialog.show();
 
         layoutWallpaper = (LinearLayout) findViewById(R.id.layoutWallpaper);
         layoutNoData = (LinearLayout) findViewById(R.id.linearLayoutNoData);
+        layoutLimitExeed = (LinearLayout) findViewById(R.id.linearLayoutLimitExeed);
 
         layoutWallpaper.setVisibility(View.VISIBLE);
         layoutNoData.setVisibility(View.GONE);
 
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, URL + key + loadLimit,
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, URL + keyword,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
@@ -115,10 +120,10 @@ public class MainActivity extends AppCompatActivity {
                         listItems.removeAll(listItems);
                         try {
                             JSONObject jsonObject = new JSONObject(response);
-                            String dataLength = jsonObject.getString("total_count");
+                            allDataLength = jsonObject.getString("total_count");
                             JSONArray jsonArray = jsonObject.getJSONArray("items");
 
-                            Log.d("Total Data Count", dataLength);
+                            Log.d("Total Data Count", allDataLength);
                             Log.d("JSON ARRAY", "" + jsonArray);
 
                             for(int i = 0; i < jsonArray.length(); i++) {
@@ -130,7 +135,12 @@ public class MainActivity extends AppCompatActivity {
                                 listItems.add(listItem);
                             }
 
-                            if(Integer.parseInt(dataLength) == 0) {
+                            if(jsonObject.has("message")) {
+                                layoutWallpaper.setVisibility(View.GONE);
+                                layoutNoData.setVisibility(View.GONE);
+                                layoutLimitExeed.setVisibility(View.VISIBLE);
+                            }
+                            else if(Integer.parseInt(allDataLength) == 0) {
                                 layoutWallpaper.setVisibility(View.GONE);
                                 layoutNoData.setVisibility(View.VISIBLE);
                             }
@@ -146,7 +156,9 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
-                        Log.d("ERROR", "BUGS");
+                        layoutWallpaper.setVisibility(View.GONE);
+                        layoutNoData.setVisibility(View.GONE);
+                        layoutLimitExeed.setVisibility(View.VISIBLE);
                     }
                 });
 
@@ -154,29 +166,29 @@ public class MainActivity extends AppCompatActivity {
         requestQueue.add(stringRequest);
     }
 
-    public void loadMore(String key) {
+    public void loadMore() {
         final ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Loading...");
         progressDialog.show();
 
         layoutWallpaper = (LinearLayout) findViewById(R.id.layoutWallpaper);
         layoutNoData = (LinearLayout) findViewById(R.id.linearLayoutNoData);
+        layoutLimitExeed = (LinearLayout) findViewById(R.id.linearLayoutLimitExeed);
 
         layoutWallpaper.setVisibility(View.VISIBLE);
         layoutNoData.setVisibility(View.GONE);
 
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, URL + key + loadLimit + page + pageAt,
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, URL + keyword + page + pageAt,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         progressDialog.dismiss();
-
                         try {
                             JSONObject jsonObject = new JSONObject(response);
-                            String dataLength = jsonObject.getString("total_count");
+                            allDataLength = jsonObject.getString("total_count");
                             JSONArray jsonArray = jsonObject.getJSONArray("items");
 
-                            Log.d("Total Data Count", dataLength);
+                            Log.d("Total Data Count", allDataLength);
                             Log.d("JSON ARRAY", "" + jsonArray);
 
                             for(int i = 0; i < jsonArray.length(); i++) {
@@ -188,12 +200,20 @@ public class MainActivity extends AppCompatActivity {
                                 listItems.add(listItem);
                             }
 
-                            if(Integer.parseInt(dataLength) == 0) {
+                            if(jsonObject.has("message")) {
+                                layoutWallpaper.setVisibility(View.GONE);
+                                layoutNoData.setVisibility(View.GONE);
+                                layoutLimitExeed.setVisibility(View.VISIBLE);
+                            }
+                            else if(Integer.parseInt(allDataLength) == 0) {
                                 layoutWallpaper.setVisibility(View.GONE);
                                 layoutNoData.setVisibility(View.VISIBLE);
                             }
                             adapter = new RecyclerViewAdapter(getApplicationContext(), listItems);
                             recyclerView.setAdapter(adapter);
+                            int position = recyclerView.getAdapter().getItemCount()-40;
+                            recyclerView.scrollToPosition(position);
+                            adapter.notifyDataSetChanged();
 
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -204,7 +224,9 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
-                        Log.d("ERROR", "BUGS");
+                        layoutWallpaper.setVisibility(View.GONE);
+                        layoutNoData.setVisibility(View.GONE);
+                        layoutLimitExeed.setVisibility(View.VISIBLE);
                     }
                 });
 
@@ -222,6 +244,4 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
     }
-
-
 }
