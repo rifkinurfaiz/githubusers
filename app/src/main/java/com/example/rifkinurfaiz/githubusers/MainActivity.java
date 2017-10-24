@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     String keyword = "";
     int pageAt = 1;
     String allDataLength;
+    int status = 1; //1 data okay, normal view; 2 data not found; 3 limit exeed
 
     Toolbar mToolbar;
     EditText searchBar;
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
 
     RecyclerView recyclerView;
     RecyclerView.Adapter adapter;
-    List<ListItem> listItems;
+    List<ListItem> listItems = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
                     if(haveNetworkConnection()) {
                         keyword = searchBar.getText().toString();
                         if(keyword.length() > 0) {
+                            pageAt = 0;
                             loadRecyclerViewData();
                         }
                         return true;
@@ -88,18 +90,39 @@ public class MainActivity extends AppCompatActivity {
                 super.onScrolled(recyclerView, dx, dy);
                 if (dy > 0) {
                     if (!recyclerView.canScrollVertically(RecyclerView.FOCUS_DOWN)) {
-                        pageAt++;
-                        if(Integer.parseInt(allDataLength) != listItems.size()) {
+                        if(listItems.size() < Integer.parseInt(allDataLength) ) {
+                            pageAt++;
                             loadMore();
                         }
                     }
                 }
             }
         });
-
-        listItems = new ArrayList<>();
     }
 
+    // method to set background depending on API response
+    public void setBackground() {
+        // data ok, view normal
+        if(status == 1) {
+            layoutWallpaper.setVisibility(View.VISIBLE);
+            layoutNoData.setVisibility(View.GONE);
+            layoutLimitExeed.setVisibility(View.GONE);
+        }
+        // data not found
+        else if(status == 2) {
+            layoutWallpaper.setVisibility(View.GONE);
+            layoutNoData.setVisibility(View.VISIBLE);
+            layoutLimitExeed.setVisibility(View.GONE);
+        }
+        // limit exeed
+        else if(status == 3) {
+            layoutWallpaper.setVisibility(View.GONE);
+            layoutNoData.setVisibility(View.GONE);
+            layoutLimitExeed.setVisibility(View.VISIBLE);
+        }
+    }
+
+    // method to load data when user click search button
     public void loadRecyclerViewData() {
         final ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Loading...");
@@ -109,8 +132,9 @@ public class MainActivity extends AppCompatActivity {
         layoutNoData = (LinearLayout) findViewById(R.id.linearLayoutNoData);
         layoutLimitExeed = (LinearLayout) findViewById(R.id.linearLayoutLimitExeed);
 
-        layoutWallpaper.setVisibility(View.VISIBLE);
-        layoutNoData.setVisibility(View.GONE);
+        // set background to normal
+        status = 1;
+        setBackground();
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, URL + keyword,
                 new Response.Listener<String>() {
@@ -135,14 +159,10 @@ public class MainActivity extends AppCompatActivity {
                                 listItems.add(listItem);
                             }
 
-                            if(jsonObject.has("message")) {
-                                layoutWallpaper.setVisibility(View.GONE);
-                                layoutNoData.setVisibility(View.GONE);
-                                layoutLimitExeed.setVisibility(View.VISIBLE);
-                            }
-                            else if(Integer.parseInt(allDataLength) == 0) {
-                                layoutWallpaper.setVisibility(View.GONE);
-                                layoutNoData.setVisibility(View.VISIBLE);
+                            // not found
+                            if(Integer.parseInt(allDataLength) == 0) {
+                                status = 2;
+                                setBackground();
                             }
                             adapter = new RecyclerViewAdapter(getApplicationContext(), listItems);
                             recyclerView.setAdapter(adapter);
@@ -156,9 +176,9 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
-                        layoutWallpaper.setVisibility(View.GONE);
-                        layoutNoData.setVisibility(View.GONE);
-                        layoutLimitExeed.setVisibility(View.VISIBLE);
+                        // limit exeed
+                        status = 3;
+                        setBackground();
                     }
                 });
 
@@ -166,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
         requestQueue.add(stringRequest);
     }
 
+    // method to load data when user scroll at result of a search
     public void loadMore() {
         final ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Loading...");
@@ -175,8 +196,9 @@ public class MainActivity extends AppCompatActivity {
         layoutNoData = (LinearLayout) findViewById(R.id.linearLayoutNoData);
         layoutLimitExeed = (LinearLayout) findViewById(R.id.linearLayoutLimitExeed);
 
-        layoutWallpaper.setVisibility(View.VISIBLE);
-        layoutNoData.setVisibility(View.GONE);
+        // Set background to normal
+        status = 1;
+        setBackground();
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, URL + keyword + page + pageAt,
                 new Response.Listener<String>() {
@@ -200,14 +222,10 @@ public class MainActivity extends AppCompatActivity {
                                 listItems.add(listItem);
                             }
 
-                            if(jsonObject.has("message")) {
-                                layoutWallpaper.setVisibility(View.GONE);
-                                layoutNoData.setVisibility(View.GONE);
-                                layoutLimitExeed.setVisibility(View.VISIBLE);
-                            }
-                            else if(Integer.parseInt(allDataLength) == 0) {
-                                layoutWallpaper.setVisibility(View.GONE);
-                                layoutNoData.setVisibility(View.VISIBLE);
+                            // not found
+                            if(Integer.parseInt(allDataLength) == 0) {
+                                status = 2;
+                                setBackground();
                             }
                             adapter = new RecyclerViewAdapter(getApplicationContext(), listItems);
                             recyclerView.setAdapter(adapter);
@@ -224,9 +242,9 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
-                        layoutWallpaper.setVisibility(View.GONE);
-                        layoutNoData.setVisibility(View.GONE);
-                        layoutLimitExeed.setVisibility(View.VISIBLE);
+                        // limit exeed
+                        status = 3;
+                        setBackground();
                     }
                 });
 
@@ -234,6 +252,7 @@ public class MainActivity extends AppCompatActivity {
         requestQueue.add(stringRequest);
     }
 
+    // Method to check weather device connected to internet or not
     private boolean haveNetworkConnection() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
